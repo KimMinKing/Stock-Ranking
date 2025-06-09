@@ -59,28 +59,30 @@ function updateCurrentTime() {
     }
 }
 
-// Load stocks from API
+// 주식 목록 불러오는 api 
 function loadStocks(sortKey) {
     showLoading(true);
 
-    fetch(`/api/stocks/${sortKey}`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', `/api/stocks/${sortKey}`, true);
+
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+            showLoading(false);
+            if (xhr.status === 200) {
+                var data = JSON.parse(xhr.responseText);
+                currentStocks = data.output || [];
+                renderStockList(currentStocks); //화면에 표시
+            } else {
+                console.error('Error loading stocks:', xhr.status);
+                showError('데이터를 불러오는 중 오류가 발생했습니다.');
             }
-            return response.json();
-        })
-        .then(data => {
-            currentStocks = data.output || [];
-            renderStockList(currentStocks);
-            showLoading(false);
-        })
-        .catch(error => {
-            console.error('Error loading stocks:', error);
-            showError('데이터를 불러오는 중 오류가 발생했습니다.');
-            showLoading(false);
-        });
+        }
+    };
+
+    xhr.send();
 }
+
 
 // Show/hide loading
 function showLoading(show) {
@@ -200,46 +202,42 @@ function loadStockDetails(stock) {
         detailsContainer.style.opacity = '0.7';
     }
 
-    // Fetch detailed price information
-    fetch(`/api/stockprice/m/${code}`)
-        .then(response => {
-            console.log('API 응답 상태:', response.status);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('=== API 응답 전체 데이터 ===');
-            console.log(data);
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', `/api/stockprice/m/${code}`, true);
 
-            console.log('=== data.output ===');
-            console.log(data.output);
-
-            console.log('=== 주요 필드들 ===');
-            const output = data.output || data;
-            console.log('현재가 (stck_prpr):', output.stck_prpr);
-            console.log('전일대비 (prdy_vrss):', output.prdy_vrss);
-            console.log('등락률 (prdy_ctrt):', output.prdy_ctrt);
-            console.log('거래량 (acml_vol):', output.acml_vol);
-            console.log('거래대금 (acml_tr_pbmn):', output.acml_tr_pbmn);
-            console.log('시가 (stck_oprc):', output.stck_oprc);
-            console.log('고가 (stck_hgpr):', output.stck_hgpr);
-            console.log('저가 (stck_lwpr):', output.stck_lwpr);
-
-            // Update with detailed information
-            showStockDetails(stock, output);
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
             if (detailsContainer) {
                 detailsContainer.style.opacity = '1';
             }
-        })
-        .catch(error => {
-            console.error('API 호출 에러:', error);
-            // Keep basic info if detailed fetch fails
-            if (detailsContainer) {
-                detailsContainer.style.opacity = '1';
+            if (xhr.status === 200) {
+                var data = JSON.parse(xhr.responseText);
+                console.log('=== API 응답 전체 데이터 ===');
+                console.log(data);
+
+                console.log('=== data.output ===');
+                console.log(data.output);
+
+                console.log('=== 주요 필드들 ===');
+                const output = data.output || data;
+                console.log('현재가 (stck_prpr):', output.stck_prpr);
+                console.log('전일대비 (prdy_vrss):', output.prdy_vrss);
+                console.log('등락률 (prdy_ctrt):', output.prdy_ctrt);
+                console.log('거래량 (acml_vol):', output.acml_vol);
+                console.log('거래대금 (acml_tr_pbmn):', output.acml_tr_pbmn);
+                console.log('시가 (stck_oprc):', output.stck_oprc);
+                console.log('고가 (stck_hgpr):', output.stck_hgpr);
+                console.log('저가 (stck_lwpr):', output.stck_lwpr);
+
+                // Update with detailed information
+                showStockDetails(stock, output);
+            } else {
+                console.error('API 호출 에러:', xhr.status);
             }
-        });
+        }
+    };
+
+    xhr.send();
 }
 
 // Show stock details with enhanced information
