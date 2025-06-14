@@ -8,6 +8,10 @@ const currentTimeEl = document.getElementById('currentTime');
 const marketStatusEl = document.getElementById('marketStatus');
 
 // State
+// 전역 변수에 추가
+let currentChart = null;
+let currentChartPeriod = 'D'; // D, W, M
+
 let currentStocks = [];
 let selectedStock = null;
 
@@ -28,6 +32,17 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.addEventListener('click', function() {
             chartBtns.forEach(b => b.classList.remove('active'));
             this.classList.add('active');
+
+            // 차트 기간 설정
+            const btnText = this.textContent;
+            if (btnText === '일봉') currentChartPeriod = 'D';
+            else if (btnText === '주봉') currentChartPeriod = 'W';
+            else if (btnText === '월봉') currentChartPeriod = 'M';
+
+            // 선택된 종목이 있으면 차트 업데이트
+            if (selectedStock) {
+                loadChartData(selectedStock, currentChartPeriod);
+            }
         });
     });
 });
@@ -172,12 +187,12 @@ function selectStock(stock, element) {
     document.querySelectorAll('.stock-item').forEach(item => {
         item.classList.remove('selected');
     });
-
     // Add selection to current item
     element.classList.add('selected');
-
     selectedStock = stock;
     loadStockDetails(stock);
+    // 차트 데이터 로딩
+    loadChartData(stock, currentChartPeriod);
 }
 
 // Load detailed stock information from stockprice API
@@ -212,22 +227,8 @@ function loadStockDetails(stock) {
             }
             if (xhr.status === 200) {
                 var data = JSON.parse(xhr.responseText);
-                console.log('=== API 응답 전체 데이터 ===');
-                console.log(data);
 
-                console.log('=== data.output ===');
-                console.log(data.output);
-
-                console.log('=== 주요 필드들 ===');
                 const output = data.output || data;
-                console.log('현재가 (stck_prpr):', output.stck_prpr);
-                console.log('전일대비 (prdy_vrss):', output.prdy_vrss);
-                console.log('등락률 (prdy_ctrt):', output.prdy_ctrt);
-                console.log('거래량 (acml_vol):', output.acml_vol);
-                console.log('거래대금 (acml_tr_pbmn):', output.acml_tr_pbmn);
-                console.log('시가 (stck_oprc):', output.stck_oprc);
-                console.log('고가 (stck_hgpr):', output.stck_hgpr);
-                console.log('저가 (stck_lwpr):', output.stck_lwpr);
 
                 // Update with detailed information
                 showStockDetails(stock, output);
@@ -390,6 +391,99 @@ document.addEventListener('keydown', function(e) {
         stockItems[newIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 });
+
+// 차트 데이터 로딩 함수
+function loadChartData(stock, period = 'D') {
+    const code = stock.stck_shrn_iscd || stock.mksc_shrn_iscd || stock.pdno || '';
+
+    if (!code) {
+        console.log('차트 로딩 실패: 종목 코드가 없음');
+        return;
+    }
+
+    console.log(`차트 데이터 로딩: ${code}, 기간: ${period}`);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', `/api/stockdaily/${code}?period=${period}`, true);
+
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                const data = JSON.parse(xhr.responseText);
+                console.log('차트 데이터 응답:', data);
+
+                if (data.output && data.output.length > 0) {
+                    renderChart(data.output, stock);
+                } else {
+                    // 차트 데이터 없으면 차트 영역 비우기
+                    document.querySelector('.chart-container').innerHTML = '';
+                }
+            } else {
+                console.error('차트 데이터 로딩 실패:', xhr.status);
+                document.querySelector('.chart-container').innerHTML = '';
+            }
+        }
+    };
+
+    xhr.send();
+}
+
+// 트레이딩뷰 차트 렌더링
+function renderChart(chartData, stock) {
+    const chartContainer = document.querySelector('.chart-container');
+
+    // 기존 차트 제거
+    chartContainer.innerHTML = '';
+
+    // 트레이딩뷰 라이트 차트 생성
+    const chart = LightweightCharts.createChart(chartContainer, {
+        width: chartContainer.offsetWidth,
+        height: 250, // 더 크게 확대
+        layout: {
+            background: { color: '#ffffff' },
+            textColor: '#000000'
+        },
+        grid: {
+            vertLines: { color: '#eeeeee' },
+            horzLines: { color: '#eeeeee' }
+        },
+        timeScale: {
+            timeVisible: true,
+            secondsVisible: false,
+            rightOffset: 1,     // 오른쪽 여백
+            barSpacing: 20       // 캔들 간격 넓히기
+        }
+    });
+    const series = chart.addCandlestickSeries({
+        upColor: '#ff3b3b', // 빨강 (양봉)
+        downColor: '#0acf97', // 초록 (음봉)
+        borderUpColor: '#ff3b3b',
+        borderDownColor: '#0acf97',
+        wickUpColor: '#ff3b3b',
+        wickDownColor: '#0acf97'
+    });
+
+    const formattedData = chartData.map(item => {
+        const dateStr = item.stck_bsop_date;
+        const year = +dateStr.slice(0, 4);
+        const month = +dateStr.slice(4, 6) - 1;
+        const day = +dateStr.slice(6, 8);
+        const date = new Date(Date.UTC(year, month, day));
+
+        return {
+            time: Math.floor(date.getTime() / 1000),
+            open: +item.stck_oprc,
+            high: +item.stck_hgpr,
+            low: +item.stck_lwpr,
+            close: +item.stck_clpr
+        };
+    }).reverse();
+
+    series.setData(formattedData);
+
+    currentChart = chart;
+}
+
 
 // Auto-refresh data every 30 seconds
 setInterval(() => {

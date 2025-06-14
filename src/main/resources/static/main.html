@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>주식 대시보드</title>
+    <title>주식 대시보드씨바</title>
+    <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+
     <link rel="stylesheet" href="style.css">
+
 </head>
 <body>
 <div class="container">
@@ -55,9 +58,24 @@
                 </div>
 
                 <div class="stock-details" id="stockDetails" style="display: none;">
-                    <div class="stock-header">
+
+                    <div class="chart-header">
+                        <div class="stock-header">
                         <h2 class="stock-name" id="stockName"></h2>
                         <span class="stock-code" id="stockCode"></span>
+                        </div>
+                        <div class="chart-controls">
+                            <button class="chart-btn active">일봉</button>
+                            <button class="chart-btn">주봉</button>
+                            <button class="chart-btn">월봉</button>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-placeholder">
+                            <div class="chart-icon">📈</div>
+                            <p>차트가 여기에 표시됩니다</p>
+                            <small>종목을 선택하면 해당 종목의 차트를 볼 수 있습니다</small>
+                        </div>
                     </div>
 
                     <div class="info-grid">
@@ -189,24 +207,6 @@
                 </div>
             </section>
 
-            <!-- Chart Section -->
-            <section class="chart-section">
-                <div class="chart-header">
-                    <h3>차트 영역</h3>
-                    <div class="chart-controls">
-                        <button class="chart-btn active">일봉</button>
-                        <button class="chart-btn">주봉</button>
-                        <button class="chart-btn">월봉</button>
-                    </div>
-                </div>
-                <div class="chart-container">
-                    <div class="chart-placeholder">
-                        <div class="chart-icon">📈</div>
-                        <p>차트가 여기에 표시됩니다</p>
-                        <small>종목을 선택하면 해당 종목의 차트를 볼 수 있습니다</small>
-                    </div>
-                </div>
-            </section>
         </main>
     </div>
 </div>
