@@ -10,7 +10,7 @@ const marketStatusEl = document.getElementById('marketStatus');
 // State
 // 전역 변수에 추가
 let currentChart = null;
-let currentChartPeriod = 'D'; // D, W, M
+let currentChartPeriod = 'D'; // B, D, W, M
 
 let currentStocks = [];
 let selectedStock = null;
@@ -35,7 +35,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // 차트 기간 설정
             const btnText = this.textContent;
-            if (btnText === '일봉') currentChartPeriod = 'D';
+
+            if (btnText === '분봉') currentChartPeriod = 'B';
+            else if (btnText === '일봉') currentChartPeriod = 'D';
             else if (btnText === '주봉') currentChartPeriod = 'W';
             else if (btnText === '월봉') currentChartPeriod = 'M';
 
@@ -192,6 +194,7 @@ function selectStock(stock, element) {
     selectedStock = stock;
     loadStockDetails(stock);
     // 차트 데이터 로딩
+    console.log("sibar"+currentChartPeriod)
     loadChartData(stock, currentChartPeriod);
 }
 
@@ -392,31 +395,45 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
+
 // 차트 데이터 로딩 함수
 function loadChartData(stock, period = 'D') {
     const code = stock.stck_shrn_iscd || stock.mksc_shrn_iscd || stock.pdno || '';
-
     if (!code) {
         console.log('차트 로딩 실패: 종목 코드가 없음');
         return;
     }
-
     console.log(`차트 데이터 로딩: ${code}, 기간: ${period}`);
 
     const xhr = new XMLHttpRequest();
-    xhr.open('GET', `/api/stockdaily/${code}?period=${period}`, true);
 
+    // period가 'B'이면 분단위 API 사용, 아니면 기존 일봉 API 사용
+    const apiUrl = period === 'B'
+        ? `/api/stockminute/${code}/full-day`
+        : `/api/stockdaily/${code}?period=${period}`;
+
+    xhr.open('GET', apiUrl, true);
     xhr.onreadystatechange = function () {
         if (xhr.readyState === 4) {
             if (xhr.status === 200) {
                 const data = JSON.parse(xhr.responseText);
                 console.log('차트 데이터 응답:', data);
 
-                if (data.output && data.output.length > 0) {
-                    renderChart(data.output, stock);
+                // 분단위 데이터와 일봉 데이터 구분하여 처리
+                if (period === 'B') {
+                    if (data.minute_data && data.minute_data.length > 0) {
+                        renderChart(data.minute_data, stock, 'B');
+                    } else {
+                        // 차트 데이터 없으면 차트 영역 비우기
+                        document.querySelector('.chart-container').innerHTML = '';
+                    }
                 } else {
-                    // 차트 데이터 없으면 차트 영역 비우기
-                    document.querySelector('.chart-container').innerHTML = '';
+                    if (data.output && data.output.length > 0) {
+                        renderChart(data.output, stock, period);
+                    } else {
+                        // 차트 데이터 없으면 차트 영역 비우기
+                        document.querySelector('.chart-container').innerHTML = '';
+                    }
                 }
             } else {
                 console.error('차트 데이터 로딩 실패:', xhr.status);
@@ -424,21 +441,26 @@ function loadChartData(stock, period = 'D') {
             }
         }
     };
-
     xhr.send();
 }
 
-// 트레이딩뷰 차트 렌더링
-function renderChart(chartData, stock) {
+// 트레이딩뷰 차트 렌더링 - 2배 확대 버전
+function renderChart(chartData, stock, period = 'D') {
     const chartContainer = document.querySelector('.chart-container');
-
     // 기존 차트 제거
     chartContainer.innerHTML = '';
 
+    console.log('renderChart 호출됨:', { period, dataLength: chartData.length });
+    console.log('첫 번째 데이터 샘플:', chartData[0]);
+
+    // 컨테이너 크기 그대로 사용
+    const containerWidth = chartContainer.offsetWidth;
+    const chartHeight = 250; // 원래 높이 유지
+
     // 트레이딩뷰 라이트 차트 생성
     const chart = LightweightCharts.createChart(chartContainer, {
-        width: chartContainer.offsetWidth,
-        height: 250, // 더 크게 확대
+        width: containerWidth,
+        height: chartHeight,
         layout: {
             background: { color: '#ffffff' },
             textColor: '#000000'
@@ -449,41 +471,132 @@ function renderChart(chartData, stock) {
         },
         timeScale: {
             timeVisible: true,
-            secondsVisible: false,
-            rightOffset: 1,     // 오른쪽 여백
-            barSpacing: 20       // 캔들 간격 넓히기
+            secondsVisible: period === 'B', // 분단위일 때만 초 표시
+            rightOffset: 0,
+            barSpacing: period === 'B' ? 60 : 120 // 캔들 간격을 2배로 확대
+            // minBarSpacing 제거 - 자동 조정되게 놔둠
         }
     });
+
     const series = chart.addCandlestickSeries({
         upColor: '#ff3b3b', // 빨강 (양봉)
         downColor: '#0acf97', // 초록 (음봉)
         borderUpColor: '#ff3b3b',
         borderDownColor: '#0acf97',
         wickUpColor: '#ff3b3b',
-        wickDownColor: '#0acf97'
+        wickDownColor: '#0acf97',
+        priceLineVisible: true,
+        lastValueVisible: true,
+        // 캔들스틱 두께 조정으로 시각적 확대 효과
+        borderVisible: true,
+        borderColor: '#000000',
+        wickVisible: true
     });
 
+    // 먼저 데이터를 포맷팅해서 가격 변동폭 계산
     const formattedData = chartData.map(item => {
-        const dateStr = item.stck_bsop_date;
-        const year = +dateStr.slice(0, 4);
-        const month = +dateStr.slice(4, 6) - 1;
-        const day = +dateStr.slice(6, 8);
-        const date = new Date(Date.UTC(year, month, day));
+        if (period === 'B') {
+            // 분단위 데이터 처리 - 수정된 부분
+            const dateStr = item.stck_bsop_date; // "20250613"
+            const timeStr = item.stck_cntg_hour; // "090000"
 
-        return {
-            time: Math.floor(date.getTime() / 1000),
-            open: +item.stck_oprc,
-            high: +item.stck_hgpr,
-            low: +item.stck_lwpr,
-            close: +item.stck_clpr
-        };
-    }).reverse();
+            // 한국 시간 기준으로 Date 객체 생성
+            const year = parseInt(dateStr.slice(0, 4));
+            const month = parseInt(dateStr.slice(4, 6)) - 1;
+            const day = parseInt(dateStr.slice(6, 8));
+            const hour = parseInt(timeStr.slice(0, 2));
+            const minute = parseInt(timeStr.slice(2, 4));
 
-    series.setData(formattedData);
+            // UTC 시간으로 생성한 후 한국 시간대로 조정 (UTC+9)
+            const utcDate = new Date(Date.UTC(year, month, day, hour - 9, minute));
+
+            if (isNaN(utcDate.getTime())) {
+                console.error('Invalid date:', { dateStr, timeStr, year, month, day, hour, minute });
+                return null;
+            }
+
+            const result = {
+                time: Math.floor(utcDate.getTime() / 1000),
+                open: parseFloat(item.stck_oprc) || 0,
+                high: parseFloat(item.stck_hgpr) || 0,
+                low: parseFloat(item.stck_lwpr) || 0,
+                close: parseFloat(item.stck_prpr) || 0 // 분단위는 stck_prpr이 현재가
+            };
+
+            // 디버깅용 로그 (처음 5개만)
+            if (chartData.indexOf(item) < 5) {
+                console.log('분봉 데이터 변환:', {
+                    original: { dateStr, timeStr },
+                    parsed: { year, month: month + 1, day, hour, minute },
+                    timestamp: result.time,
+                    utcDate: utcDate.toISOString(),
+                    localDate: new Date(result.time * 1000).toLocaleString('ko-KR'),
+                    ohlc: { o: result.open, h: result.high, l: result.low, c: result.close }
+                });
+            }
+
+            return result;
+        } else {
+            // 일봉 데이터 처리 (기존 로직)
+            const dateStr = item.stck_bsop_date;
+            const year = parseInt(dateStr.slice(0, 4));
+            const month = parseInt(dateStr.slice(4, 6)) - 1;
+            const day = parseInt(dateStr.slice(6, 8));
+            const date = new Date(year, month, day);
+
+            return {
+                time: Math.floor(date.getTime() / 1000),
+                open: parseFloat(item.stck_oprc) || 0,
+                high: parseFloat(item.stck_hgpr) || 0,
+                low: parseFloat(item.stck_lwpr) || 0,
+                close: parseFloat(item.stck_clpr) || 0
+            };
+        }
+    }).filter(item => item !== null) // null 값 제거
+        .sort((a, b) => a.time - b.time); // 시간순 정렬
+
+    console.log('포맷된 데이터 개수:', formattedData.length);
+    console.log('첫 번째 포맷된 데이터:', formattedData[0]);
+    console.log('마지막 포맷된 데이터:', formattedData[formattedData.length - 1]);
+
+    if (formattedData.length === 0) {
+        console.error('포맷된 데이터가 없습니다!');
+        chartContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">차트 데이터를 표시할 수 없습니다.</div>';
+        return;
+    }
+
+    // 차트에 데이터 설정
+    try {
+        series.setData(formattedData);
+        console.log('차트 데이터 설정 완료');
+
+        // 차트 시간 범위를 데이터에 맞게 설정
+        if (formattedData.length > 0) {
+            const firstTime = formattedData[0].time;
+            const lastTime = formattedData[formattedData.length - 1].time;
+
+            // 시간 범위 설정 (약간의 여백 추가)
+            chart.timeScale().setVisibleRange({
+                from: firstTime,
+                to: lastTime
+            });
+
+            console.log('시간 범위 설정:', {
+                from: new Date(firstTime * 1000).toLocaleString('ko-KR'),
+                to: new Date(lastTime * 1000).toLocaleString('ko-KR')
+            });
+        }
+    } catch (error) {
+        console.error('차트 데이터 설정 오류:', error);
+        chartContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #f00;">차트 렌더링 오류가 발생했습니다.</div>';
+        return;
+    }
 
     currentChart = chart;
-}
 
+    // ResizeObserver 제거 - 고정 크기로 사용
+    console.log('차트 생성 완료 - 내용물 확대됨');
+}
 
 // Auto-refresh data every 30 seconds
 setInterval(() => {

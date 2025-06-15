@@ -48,14 +48,18 @@ public class KoreaInvestmentService {
                 .retrieve()
                 .bodyToMono(String.class);
     }
+
+    //등락률 순위
     public Mono<String> getfluctuation() {
         return getStockData("/uapi/domestic-stock/v1/ranking/fluctuation", "FHPST01700000", "20170");
     }
 
+    //시가총액 상위
     public Mono<String> getmarket_cap() {
         return getStockData("/uapi/domestic-stock/v1/ranking/market-cap", "FHPST01740000", "20174");
     }
 
+    //수익자산지표 순위
     public Mono<String> getprofit_asset_index() {
         return getStockData("/uapi/domestic-stock/v1/ranking/profit-asset-index", "FHPST01730000", "20173");
     }
@@ -87,4 +91,10 @@ public class KoreaInvestmentService {
                 .retrieve()
                 .bodyToMono(String.class);
     }
+
+    //우선주 괴리율 상위 prefer-disparate-ratio
+    public Mono<String> getprefer_disparate_ratio(){
+        return getStockData("/uapi/domestic-stock/v1/ranking/prefer-disparate-ratio", "FHPST01770000","20177");
+    }
+    
 }

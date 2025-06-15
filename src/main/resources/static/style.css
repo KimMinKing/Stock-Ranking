@@ -78,7 +78,7 @@ body {
     padding: 24px;
     backdrop-filter: blur(12px);
     height: fit-content;
-    max-height: calc(100vh - 140px);
+    max-height: calc(200vh - 140px);
     display: flex;
     flex-direction: column;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
@@ -152,7 +152,7 @@ body {
 .stock-list-container {
     flex: 1;
     overflow-y: auto;
-    max-height: calc(100vh - 300px);
+    max-height: calc(200vh - 300px);
     padding-right: 4px;
 }
 
