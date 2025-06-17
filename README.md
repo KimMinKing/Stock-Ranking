@@ -1,4 +1,4 @@
-# SortStockDashboard
+# Stock Ranking Dashboard
 
 종목 정보를 정렬 및 조회할 수 있는 간단한 웹 애플리케이션입니다.  
 한국투자증권(KIS) Open API를 활용해 주식 종목 데이터를 불러오고, 순위정렬 기능을 제공합니다.  
@@ -50,7 +50,7 @@ koreainvestment.accesstoken=YOUR_ACCOUNT_NUMBER
 ./gradlew bootRun
 ```
 
-3. 웹 브라우저에서 `http://localhost:8080` 접속
+3. 웹 브라우저에서 `http://localhost:8080/main.html` 접속
 
 ---
 
