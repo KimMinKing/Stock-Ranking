@@ -11,6 +11,7 @@ import reactor.core.publisher.Mono;
 public class StockDailyService {
 
     private final WebClient webClient;
+    private final TokenService tokenService;
 
     @Value("${koreainvestment.appkey}")
     private String appKey;
@@ -18,13 +19,13 @@ public class StockDailyService {
     @Value("${koreainvestment.appsecret}")
     private String appSecret;
 
-    @Value("${koreainvestment.accesstoken}")
-    private String accessToken;
+
 
     private static final String BASE_URL = "https://openapi.koreainvestment.com:9443";
 
-    public StockDailyService(WebClient.Builder webClientBuilder) {
+    public StockDailyService(WebClient.Builder webClientBuilder, TokenService tokenService) {
         this.webClient = webClientBuilder.baseUrl(BASE_URL).build();
+        this.tokenService = tokenService;
     }
 
     /**
@@ -38,6 +39,8 @@ public class StockDailyService {
      */
     public Mono<String> getStockDailyPrice(String marketDivCode, String stockCode,
                                            String periodDivCode, String orgAdjPrice, String custType) {
+        String accessToken = tokenService.getAccessToken();
+
         return webClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/uapi/domestic-stock/v1/quotations/inquire-daily-price")
@@ -73,6 +76,8 @@ public class StockDailyService {
     public Mono<String> getStockDailyPriceWithContinuation(String marketDivCode, String stockCode,
                                                            String periodDivCode, String orgAdjPrice,
                                                            String custType, String trCont) {
+        String accessToken = tokenService.getAccessToken();
+
         return webClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/uapi/domestic-stock/v1/quotations/inquire-daily-price")

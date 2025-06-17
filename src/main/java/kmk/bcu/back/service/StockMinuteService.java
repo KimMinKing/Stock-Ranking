@@ -20,6 +20,7 @@ public class StockMinuteService {
 
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
+    private final TokenService tokenService;
 
     @Value("${koreainvestment.appkey}")
     private String appKey;
@@ -27,14 +28,13 @@ public class StockMinuteService {
     @Value("${koreainvestment.appsecret}")
     private String appSecret;
 
-    @Value("${koreainvestment.accesstoken}")
-    private String accessToken;
 
     private static final String BASE_URL = "https://openapi.koreainvestment.com:9443";
 
-    public StockMinuteService(WebClient.Builder webClientBuilder) {
+    public StockMinuteService(WebClient.Builder webClientBuilder,TokenService tokenService) {
         this.webClient = webClientBuilder.baseUrl(BASE_URL).build();
         this.objectMapper = new ObjectMapper();
+        this.tokenService = tokenService;
     }
 
     /**
@@ -314,6 +314,7 @@ public class StockMinuteService {
                                      String inputDate, String inputHour,
                                      String pwDataIncuYn, String fakeTickIncuYn,
                                      String custType, String trCont) {
+        String accessToken = tokenService.getAccessToken();
         return webClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/uapi/domestic-stock/v1/quotations/inquire-time-dailychartprice")

@@ -10,7 +10,7 @@ import java.time.format.DateTimeFormatter;
 
 @Service
 public class KoreaInvestmentService {
-
+    private final TokenService tokenService;
     private final WebClient webClient = WebClient.builder()
             .baseUrl("https://openapi.koreainvestment.com:9443")
             .defaultHeader("Content-Type", "application/json")
@@ -22,10 +22,15 @@ public class KoreaInvestmentService {
     @Value("${koreainvestment.appsecret}")
     private String appSecret;
 
-    @Value("${koreainvestment.accesstoken}")
-    private String accessToken;
+    private final String accessToken;
+
+    public KoreaInvestmentService(TokenService tokenService) {
+        this.tokenService = tokenService;
+        accessToken = tokenService.getAccessToken();
+    }
 
     public Mono<String> getStockData(String path, String trId, String fidCondScrDivCode) {
+        String accessToken = tokenService.getAccessToken();
         return webClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path(path)

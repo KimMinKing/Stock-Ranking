@@ -1,5 +1,6 @@
 package kmk.bcu.back.controller;
 
+import kmk.bcu.back.service.TokenService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,13 +15,13 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class StockController {
 
     private final WebClient webClient;
+    private final TokenService tokenService;
 
-    public StockController(WebClient.Builder builder) {
+    public StockController(WebClient.Builder builder, TokenService tokenService) {
         this.webClient = builder.baseUrl("https://openapi.koreainvestment.com:9443").build();
+        this.tokenService = tokenService;
     }
 
-    @Value("${koreainvestment.accesstoken}")
-    private String accessToken;
 
     @Value("${koreainvestment.appkey}")
     private String appKey;
@@ -30,6 +31,7 @@ public class StockController {
 
     @GetMapping("/{code}")
     public ResponseEntity<String> getStockInfo(@PathVariable String code) {
+        String accessToken = tokenService.getAccessToken();
         return webClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/uapi/domestic-stock/v1/quotations/search-stock-info")

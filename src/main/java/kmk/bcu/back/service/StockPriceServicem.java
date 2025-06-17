@@ -9,6 +9,7 @@ import reactor.core.publisher.Mono;
 public class StockPriceServicem {
 
     private final WebClient webClient;
+    private final TokenService tokenService;
 
     @Value("${koreainvestment.appkey}")
     private String appKey;
@@ -16,16 +17,18 @@ public class StockPriceServicem {
     @Value("${koreainvestment.appsecret}")
     private String appSecret;
 
-    @Value("${koreainvestment.accesstoken}")
-    private String accessToken;
+
 
     private static final String BASE_URL = "https://openapi.koreainvestment.com:9443";
 
-    public StockPriceServicem(WebClient.Builder webClientBuilder) {
+    public StockPriceServicem(WebClient.Builder webClientBuilder, TokenService tokenService) {
         this.webClient = webClientBuilder.baseUrl(BASE_URL).build();
+        this.tokenService = tokenService;
     }
 
     public Mono<String> getStockPrice(String marketDivCode, String stockCode, String custType) {
+        String accessToken = tokenService.getAccessToken();
+
         return webClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/uapi/domestic-stock/v1/quotations/inquire-price")
