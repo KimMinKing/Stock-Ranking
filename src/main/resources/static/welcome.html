@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>넥스티엘공인중개사 개업식 초청장</title>
+  <!-- 카카오 지도 JS SDK 로드 (head 안에 위치 권장) -->
+
+  <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=dd48cead73ce296592b4b85d5a05f05a&libraries=services"></script>
+
+
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap');
+
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: 'Noto Sans KR', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    #map { width: 100%; height: 400px; margin-top: 20px; }
+    .invitation-card {
+      background: white;
+      width: 400px;
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .invitation-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 6px;
+      background: linear-gradient(90deg, #667eea, #764ba2);
+    }
+
+    .header {
+      font-size: 32px;
+      font-weight: 700;
+      color: #2c3e50;
+      margin-bottom: 30px;
+      position: relative;
+    }
+
+    .header::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 3px;
+      background: linear-gradient(90deg, #667eea, #764ba2);
+    }
+
+    .content {
+      font-size: 16px;
+      line-height: 1.8;
+      color: #34495e;
+      margin-bottom: 30px;
+    }
+
+    .date-time {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      padding: 20px;
+      border-radius: 15px;
+      margin: 30px 0;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .business-card {
+      margin: 30px 0;
+      padding: 25px;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+      border: 2px solid #e8f4f8;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 15px;
+    }
+
+    .license-number {
+      font-size: 14px;
+      color: #2c5aa0;
+      margin-bottom: 5px;
+    }
+
+    .company-name-card {
+      font-size: 24px;
+      font-weight: 700;
+      color: #2c5aa0;
+      margin-bottom: 8px;
+    }
+
+    .company-subtitle {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 15px;
+    }
+
+    .representative-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid #e0e0e0;
+      padding-top: 15px;
+    }
+
+    .representative-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .contact-info {
+      text-align: right;
+      font-size: 14px;
+      color: #666;
+    }
+
+    .address {
+      font-size: 12px;
+      color: #888;
+      margin-top: 10px;
+    }
+
+    .map-container {
+      margin: 30px 0;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 15px;
+    }
+
+    .map-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #2c3e50;
+      margin-bottom: 15px;
+    }
+
+    .detailed-map {
+      width: 100%;
+      height: 220px;
+      background: white;
+      border-radius: 6px;
+      position: relative;
+      border: 2px solid #ecf0f1;
+      overflow: hidden;
+    }
+
+    .main-road {
+      position: absolute;
+      background: #3498db;
+      width: 100%;
+      height: 12px;
+      top: 60%;
+      transform: translateY(-50%);
+    }
+
+    .side-road {
+      position: absolute;
+      background: #3498db;
+      width: 12px;
+      height: 80px;
+      left: 22%;
+      top: 20%;
+    }
+
+    .connection-road {
+      position: absolute;
+      background: #95a5a6;
+      width: 100px;
+      height: 10px;
+      left: 22%;
+      top: 20%;
+      border-radius: 2px;
+    }
+
+    .ara-station {
+      position: absolute;
+      background: #e74c3c;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      bottom: 25px;
+      left: 18%;
+      transform: translateX(-50%);
+    }
+
+    .exit-2 {
+      position: absolute;
+      background: #e67e22;
+      color: white;
+      padding: 6px 10px;
+      border-radius: 3px;
+      font-size: 11px;
+      font-weight: 600;
+      bottom: 40px;
+      left: 22%;
+      transform: translateX(-50%);
+    }
+
+    .office-location {
+      position: absolute;
+      background: #f39c12;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      top: 8px;
+      left: 22%;
+      transform: translateX(-50%);
+      text-align: center;
+      line-height: 1.2;
+    }
+
+    .route-arrow {
+      position: absolute;
+      color: #e74c3c;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .arrow-1 {
+      top: 40%;
+      left: 24%;
+    }
+
+    .arrow-2 {
+      top: 18%;
+      left: 28%;
+    }
+
+    .walking-time {
+      position: absolute;
+      background: #27ae60;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .closing {
+      font-size: 14px;
+      color: #7f8c8d;
+      margin-top: 30px;
+      font-style: italic;
+    }
+
+  </style>
+
+</head>
+<body>
+<div class="invitation-card">
+  <div class="header">개업식 초청장</div>
+
+  <div class="content">
+    안녕하십니까?<br>
+    더케이공인중개사가 검단신도시 중심 롯데넥스티엘 인근<br>
+    <strong>넥스티엘부동산</strong>으로 이전합니다.<br><br>
+    가까운 지인들을 모시고 개업식을 진행할 예정이오니<br>
+    시간되시는 분들은 격려해 주시면 감사하겠습니다.
+  </div>
+
+  <div class="date-time">
+    2025년 7월 17일(목) 오후 5시
+  </div>
+
+  <div class="business-card">
+    <div class="license-number">제 28260-2023-00314 호</div>
+    <div class="company-name-card">넥스티엘부동산</div>
+    <div class="company-subtitle">공인중개사사무소<br>NEXTi-L Real Estate Agency</div>
+
+    <div class="representative-info">
+      <div class="representative-title">대표공인중개사<br><strong>김 학 준</strong></div>
+      <div class="contact-info">
+        TEL. 032-561-1701<br>
+        Mobile. 010-3299-7139
+      </div>
+    </div>
+
+    <div class="address">
+      인천시 서구 바리미로 5번길 8 골든스퀘어 113호
+    </div>
+  </div>
+
+  <!-- 1. 지도 표시 div (한 번만!) -->
+  <div id="map"></div>
+
+  <div class="closing">
+    여러분의 격려와 축하를 기다립니다
+  </div>
+</div>
+
+<!-- 2. 지도 생성 스크립트 (body 끝에 위치!) -->
+<script>
+  window.onload = function () {
+    var mapContainer = document.getElementById('map');
+    var mapOption = {
+      center: new kakao.maps.LatLng(37.6035, 126.6736),
+      level: 3
+    };
+
+    var map = new kakao.maps.Map(mapContainer, mapOption);
+    var geocoder = new kakao.maps.services.Geocoder();
+
+    geocoder.addressSearch('인천시 서구 바리미로 5번길 8 골든스퀘어', function(result, status) {
+      if (status === kakao.maps.services.Status.OK) {
+        var coords = new kakao.maps.LatLng(result[0].y, result[0].x);
+
+        var marker = new kakao.maps.Marker({
+          map: map,
+          position: coords
+        });
+
+        var infowindow = new kakao.maps.InfoWindow({
+          content: '<div style="padding:5px;">넥스티엘부동산</div>'
+        });
+        infowindow.open(map, marker);
+
+        map.setCenter(coords);
+      }
+    });
+  };
+</script>
+</body>
+</html>
